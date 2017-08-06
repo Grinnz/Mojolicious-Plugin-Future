@@ -1,35 +1,4 @@
-package Mojolicious::Plugin::Future;
-use Mojo::Base 'Mojolicious::Plugin';
-
-use Future::Mojo;
-use Scalar::Util 'weaken';
-
-our $VERSION = '0.001';
-
-my %futures;
-
-sub register {
-  my ($self, $app, $options) = @_;
-  
-  $app->helper(future => sub { shift; Future::Mojo->new(@_) });
-  
-  $app->helper(adopt_future => sub {
-    my ($c, $f) = @_;
-    my $tx = $c->render_later->tx;
-    my $fkey = "$f";
-    $futures{$fkey} = $f;
-    weaken(my $weak_c = $c);
-    return $f->on_ready(sub {
-      my $f = shift;
-      delete $futures{$fkey};
-      $weak_c->helpers->reply->exception(scalar $f->failure)
-        if defined $weak_c and $f->is_failed;
-      undef $tx;
-    });
-  });
-}
-
-1;
+=pod
 
 =head1 NAME
 
@@ -125,3 +94,5 @@ This is free software, licensed under:
 =head1 SEE ALSO
 
 L<Future::Mojo>, L<Future>
+
+=cut
